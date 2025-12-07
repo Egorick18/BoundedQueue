@@ -1,18 +1,25 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+
+public enum OverflowBehavior
+{
+    RemoveOldest,
+    ThrowException
+}
 
 public class BoundedQueue<T> : IEnumerable<T>
 {
     private readonly Queue<T> _queue;
     private readonly int _capacity;
+    private readonly OverflowBehavior _overflowBehavior;
 
-    public BoundedQueue(int capacity)
+    public BoundedQueue(int capacity, OverflowBehavior overflowBehavior = OverflowBehavior.RemoveOldest)
     {
         if (capacity <= 0)
             throw new ArgumentException("Емкость должна быть больше 0", nameof(capacity));
 
         _capacity = capacity;
+        _overflowBehavior = overflowBehavior;
         _queue = new Queue<T>(capacity);
     }
 
@@ -20,14 +27,30 @@ public class BoundedQueue<T> : IEnumerable<T>
     public int Capacity => _capacity;
     public bool IsEmpty => _queue.Count == 0;
     public bool IsFull => _queue.Count >= _capacity;
+    public OverflowBehavior Behavior => _overflowBehavior;
 
     public void Enqueue(T item)
     {
         if (_queue.Count >= _capacity)
         {
-            _queue.Dequeue();
+            switch (_overflowBehavior)
+            {
+                case OverflowBehavior.RemoveOldest:
+                    _queue.Dequeue();
+                    _queue.Enqueue(item);
+                    break;
+
+                case OverflowBehavior.ThrowException:
+                    throw new InvalidOperationException("Очередь полна. Невозможно добавить новый элемент.");
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(_overflowBehavior), "Неизвестное поведение при переполнении");
+            }
         }
-        _queue.Enqueue(item);
+        else
+        {
+            _queue.Enqueue(item);
+        }
     }
 
     public T Dequeue()
@@ -71,20 +94,34 @@ public class BoundedQueue<T> : IEnumerable<T>
         return _queue.GetEnumerator();
     }
 }
+
 class Program
 {
     static void Main()
     {
-        var numbers = new BoundedQueue<int>(5);
+        Console.WriteLine("\nRemoveOldest");
+        var queue1 = new BoundedQueue<int>(3, OverflowBehavior.RemoveOldest);
 
-        for (int i = 1; i <= 7; i++)
+        for (int i = 1; i <= 5; i++)
         {
-            numbers.Enqueue(i);
+            queue1.Enqueue(i);
+            Console.WriteLine($"Добавлено: {i}, Содержимое: [{string.Join(", ", queue1)}]");
         }
 
-        foreach (var num in numbers)
+        Console.WriteLine("\nThrowException");
+        var queue2 = new BoundedQueue<int>(3, OverflowBehavior.ThrowException);
+
+        try
         {
-            Console.Write(num + " ");
+            for (int i = 1; i <= 5; i++)
+            {
+                queue2.Enqueue(i);
+                Console.WriteLine($"Добавлено: {i}, Содержимое: [{string.Join(", ", queue2)}]");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine($"Исключение: {ex.Message}");
         }
     }
 }
