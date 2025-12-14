@@ -1,127 +1,39 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public enum OverflowBehavior
+namespace BoundedQueue
 {
-    RemoveOldest,
-    ThrowException
-}
-
-public class BoundedQueue<T> : IEnumerable<T>
-{
-    private readonly Queue<T> _queue;
-    private readonly int _capacity;
-    private readonly OverflowBehavior _overflowBehavior;
-
-    public BoundedQueue(int capacity, OverflowBehavior overflowBehavior = OverflowBehavior.RemoveOldest)
+    class Program
     {
-        if (capacity <= 0)
-            throw new ArgumentException("Емкость должна быть больше 0", nameof(capacity));
-
-        _capacity = capacity;
-        _overflowBehavior = overflowBehavior;
-        _queue = new Queue<T>(capacity);
-    }
-
-    public int Count => _queue.Count;
-    public int Capacity => _capacity;
-    public bool IsEmpty => _queue.Count == 0;
-    public bool IsFull => _queue.Count >= _capacity;
-    public OverflowBehavior Behavior => _overflowBehavior;
-
-    public void Enqueue(T item)
-    {
-        if (_queue.Count >= _capacity)
+        static void Main()
         {
-            switch (_overflowBehavior)
-            {
-                case OverflowBehavior.RemoveOldest:
-                    _queue.Dequeue();
-                    _queue.Enqueue(item);
-                    break;
+            Console.WriteLine("\nRemoveOldest");
+            var queue1 = new BoundedQueue<int>(3, OverflowBehavior.RemoveOldest);
 
-                case OverflowBehavior.ThrowException:
-                    throw new InvalidOperationException("Очередь полна. Невозможно добавить новый элемент.");
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(_overflowBehavior), "Неизвестное поведение при переполнении");
-            }
-        }
-        else
-        {
-            _queue.Enqueue(item);
-        }
-    }
-
-    public T Dequeue()
-    {
-        if (_queue.Count == 0)
-            throw new InvalidOperationException("Очередь пуста");
-
-        return _queue.Dequeue();
-    }
-
-    public T Peek()
-    {
-        if (_queue.Count == 0)
-            throw new InvalidOperationException("Очередь пуста");
-
-        return _queue.Peek();
-    }
-
-    public void Clear()
-    {
-        _queue.Clear();
-    }
-
-    public bool Contains(T item)
-    {
-        return _queue.Contains(item);
-    }
-
-    public T[] ToArray()
-    {
-        return _queue.ToArray();
-    }
-
-    public IEnumerator<T> GetEnumerator()
-    {
-        return _queue.GetEnumerator();
-    }
-
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-    {
-        return _queue.GetEnumerator();
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        Console.WriteLine("\nRemoveOldest");
-        var queue1 = new BoundedQueue<int>(3, OverflowBehavior.RemoveOldest);
-
-        for (int i = 1; i <= 5; i++)
-        {
-            queue1.Enqueue(i);
-            Console.WriteLine($"Добавлено: {i}, Содержимое: [{string.Join(", ", queue1)}]");
-        }
-
-        Console.WriteLine("\nThrowException");
-        var queue2 = new BoundedQueue<int>(3, OverflowBehavior.ThrowException);
-
-        try
-        {
             for (int i = 1; i <= 5; i++)
             {
-                queue2.Enqueue(i);
-                Console.WriteLine($"Добавлено: {i}, Содержимое: [{string.Join(", ", queue2)}]");
+                queue1.Enqueue(i);
+                Console.WriteLine($"Добавлено: {i}, Содержимое: [{string.Join(", ", queue1)}]");
             }
-        }
-        catch (InvalidOperationException ex)
-        {
-            Console.WriteLine($"Исключение: {ex.Message}");
+
+            Console.WriteLine("\nThrowException");
+            var queue2 = new BoundedQueue<int>(3, OverflowBehavior.ThrowException);
+
+            try
+            {
+                for (int i = 1; i <= 5; i++)
+                {
+                    queue2.Enqueue(i);
+                    Console.WriteLine($"Добавлено: {i}, Содержимое: [{string.Join(", ", queue2)}]");
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Исключение: {ex.Message}");
+            }
         }
     }
 }
